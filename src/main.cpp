@@ -25,6 +25,7 @@
 #include <Arduino.h>
 #include <Homey.h>
 #include "wifi_config.h"
+#include "Button.h"
 
 //GPIO map
 #define PIN_BUTTON_1   0
@@ -34,28 +35,31 @@
 #define PIN_RELAY_2    5
 
 bool state = false;
+bool state1 = false;
+bool state2 = false;
 bool previousButtonState1 = false;
 bool previousButtonState2 = false;
 unsigned long previousMillis = 0;
 const unsigned long interval = 100; //Interval in milliseconds
 
-void button1();
-
-void button2();
-
 void getState();
+void getState1();
+void getState2();
 
 void setState();
-void setButton1State();
-void setButton2State();
+void toggleSocket1();
+void toggleSocket2();
+
+void buttonChanged(Button *btn, bool released);
+
+Button button1 = Button(PIN_BUTTON_1, 1, &buttonChanged);
+Button button2 = Button(PIN_BUTTON_2, 2, &buttonChanged);
 
 
 void setLed();
 
 void setup() {
     Serial.begin(115200);
-    pinMode(PIN_BUTTON_1, INPUT);
-    pinMode(PIN_BUTTON_2, INPUT);
     pinMode(PIN_LED, OUTPUT);
     pinMode(PIN_RELAY_1, OUTPUT);
     pinMode(PIN_RELAY_2, OUTPUT);
@@ -64,10 +68,12 @@ void setup() {
     digitalWrite(PIN_RELAY_1, LOW); //Turn output off
     digitalWrite(PIN_RELAY_2, LOW); //Turn output off
 
-
     String deviceName = "sonoff-" + String(EspClass::getChipId()); // Generate device name based on ID
 
-    Serial.println("Device: " + deviceName);
+    Serial.println("\nDevice: " + deviceName);
+
+    button1.begin();
+    button2.begin();
 
     //Connect to network
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -88,13 +94,15 @@ void setup() {
 
     Homey.addCapability("onoff", setState);
 
-    Homey.addCapability("button.1", setState);
-    Homey.addCapability("button.2", setButton2State);
+    Homey.addCapability("button.one", toggleSocket1);
+    Homey.addCapability("button.two", toggleSocket2);
     Homey.addAction("output", setState);
 #ifndef LED_SHOWS_OUTPUT_STATE
     Homey.addAction("led", setLed);
 #endif
     Homey.addCondition("state", getState);
+    Homey.addCondition("socket1", getState1);
+    Homey.addCondition("socket2", getState2);
 
     digitalWrite(PIN_LED, HIGH); //Turn led off
 
@@ -102,12 +110,8 @@ void setup() {
 
 void loop() {
     Homey.loop();
-    unsigned long currentMillis = millis();
-    if (currentMillis - previousMillis > interval) {
-        previousMillis = currentMillis;
-        button1();
-        button2();
-    }
+    button1.loop();
+    button2.loop();
 }
 
 void setLed() {
@@ -116,13 +120,43 @@ void setLed() {
 }
 
 void applyState() {
+    state1 = state;
+    state2 = state;
+
     digitalWrite(PIN_RELAY_1, state);
+    digitalWrite(PIN_RELAY_2, state);
 #ifdef LED_SHOWS_OUTPUT_STATE
     digitalWrite(PIN_LED, !state);
 #endif
     Serial.println("applyState(): new state is " + String(state));
     Homey.setCapabilityValue("onoff", state);
     Homey.trigger("state", state);
+    Homey.trigger("socket1", state1);
+    Homey.trigger("socket2", state2);
+}
+
+void applyState1() {
+    state = ((state1 || state2));
+    digitalWrite(PIN_RELAY_1, state1);
+#ifdef LED_SHOWS_OUTPUT_STATE
+    digitalWrite(PIN_LED, !state);
+#endif
+    Serial.println("applyState(): new state1 is " + String(state1));
+    Homey.setCapabilityValue("onoff", state);
+    Homey.trigger("state", state);
+    Homey.trigger("socket1", state1);
+}
+
+void applyState2() {
+    state = ((state1 || state2));
+    digitalWrite(PIN_RELAY_2, state2);
+#ifdef LED_SHOWS_OUTPUT_STATE
+    digitalWrite(PIN_LED, !state);
+#endif
+    Serial.println("applyState(): new state2 is " + String(state2));
+    Homey.setCapabilityValue("onoff", state);
+    Homey.trigger("state", state);
+    Homey.trigger("socket1", state2);
 }
 
 void setState() {
@@ -130,12 +164,14 @@ void setState() {
     applyState();
 }
 
-void setButton1State() {
-
+void toggleSocket1() {
+    state1 = !state1;
+    applyState1();
 }
 
-void setButton2State() {
-
+void toggleSocket2() {
+    state2 = !state2;
+    applyState2();
 }
 
 void getState() {
@@ -143,26 +179,31 @@ void getState() {
     return Homey.returnResult(state);
 }
 
-void button1() {
-    bool currentButtonState = !digitalRead(PIN_BUTTON_1);
-    if (currentButtonState != previousButtonState1) {
-        currentButtonState = previousButtonState1;
-        Serial.println("button(): button1 is " + String(currentButtonState));
-        Homey.trigger("button1", currentButtonState);
-#ifdef BUTTON_SWITCHES_OUTPUT
-        Serial.println("button1(): toggle output");
-        if (currentButtonState) {
-            state = !state;
-            applyState();
-        }
-#endif
-    }
+void getState1() {
+    Serial.println("getState1(): state1 is " + String(state1));
+    return Homey.returnResult(state1);
 }
 
-void button2() {
-    bool currentButtonState = !digitalRead(PIN_BUTTON_2);
-    if (currentButtonState != previousButtonState2) {
-        currentButtonState = previousButtonState2;
-        Serial.println("button(): button2 is " + String(currentButtonState));
+void getState2() {
+    Serial.println("getState2(): state2 is " + String(state2));
+    return Homey.returnResult(state2);
+}
+
+
+void buttonChanged(Button *btn, bool released) {
+    Serial.print("button #");
+    Serial.print(btn->id);
+    Serial.print(" ");
+    Serial.println((released) ? "RELEASED" : "PRESSED");
+
+    if (!released) {
+        switch (btn->id) {
+            case 1:
+                toggleSocket1();
+                break;
+            case 2:
+                toggleSocket2();
+                break;
+        }
     }
 }
