@@ -29,7 +29,7 @@ protected:
     int lastButtonState;
 
     unsigned long lastDebounceTime = 0;     // The last time the output pin was toggled
-    unsigned long debounceDelay = 10;       // The debounce time
+    unsigned long debounceDelay = 10;      // The debounce time
 };
 
 
