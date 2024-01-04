@@ -82,6 +82,7 @@ void setup() {
     button2.begin();
 
     //Connect to network
+    WiFi.setHostname(deviceName.c_str());
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
     Serial.println("Connecting WiFi");
     while (WiFi.status() != WL_CONNECTED) {
