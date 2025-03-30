@@ -1,0 +1,13 @@
+CompileFlags:
+  Remove: 
+    - -fipa-pta
+    - -mlongcalls
+    - -free
+    - -mtext-section-literals
+    - -fno-tree-switch-conversion
+    - -fstrict-volatile-bitfields
+Diagnostics:
+  Suppress: 
+    - redefinition_different_typedef
+    - attribute_section_invalid_for_target
+

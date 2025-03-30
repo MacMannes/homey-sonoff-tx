@@ -14,27 +14,28 @@
 
 /* Comment out (//) lines to disable the feature */
 
-#define BUTTON_SWITCHES_OUTPUT //Have the button1 toggle the relay directly
+#define BUTTON_SWITCHES_OUTPUT  // Have the button1 toggle the relay directly
 //(if disabled the button1 will only send a trigger)
 
-#define LED_SHOWS_OUTPUT_STATE //Have the led show the state of the relay
+#define LED_SHOWS_OUTPUT_STATE  // Have the led show the state of the relay
 //(if disabled led can be controlled using an action)
 
 //--------------------------------------------------------------------------------
 
 #include <Arduino.h>
 #include <Homey.h>
-#include "wifi_config.h"
+
 #include "Button.h"
+#include "wifi_config.h"
 
-//GPIO map
-#define PIN_BUTTON_1   0
-#define PIN_BUTTON_2   9
-#define PIN_LED       13
-#define PIN_RELAY_1   12
-#define PIN_RELAY_2    5
+// GPIO map
+#define PIN_BUTTON_1 0
+#define PIN_BUTTON_2 9
+#define PIN_LED      13
+#define PIN_RELAY_1  12
+#define PIN_RELAY_2  5
 
-bool state = false;
+bool state        = false;
 bool stateSwitch1 = false;
 bool stateSwitch2 = false;
 
@@ -70,18 +71,19 @@ void setup() {
     pinMode(PIN_RELAY_1, OUTPUT);
     pinMode(PIN_RELAY_2, OUTPUT);
 
-    digitalWrite(PIN_LED, LOW); //Turn led on
-    digitalWrite(PIN_RELAY_1, LOW); //Turn output off
-    digitalWrite(PIN_RELAY_2, LOW); //Turn output off
+    digitalWrite(PIN_LED, LOW);      // Turn led on
+    digitalWrite(PIN_RELAY_1, LOW);  // Turn output off
+    digitalWrite(PIN_RELAY_2, LOW);  // Turn output off
 
-    String deviceName = "sonoff-" + String(EspClass::getChipId()); // Generate device name based on ID
+    String deviceName =
+        "sonoff-" + String(EspClass::getChipId());  // Generate device name based on ID
 
     Serial.println("\n\n\nDevice: " + deviceName);
 
     button1.begin();
     button2.begin();
 
-    //Connect to network
+    // Connect to network
     WiFi.setHostname(deviceName.c_str());
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
     Serial.println("Connecting WiFi");
@@ -90,13 +92,13 @@ void setup() {
         Serial.print(".");
     }
 
-    //Print IP address
+    // Print IP address
     Serial.print("Connected. IP address: ");
     Serial.println(WiFi.localIP());
 
     Serial.println("Connected!");
 
-    Homey.begin(deviceName, "sonoff"); //Start Homeyduino
+    Homey.begin(deviceName, "sonoff");  // Start Homeyduino
     Homey.setClass("socket");
 
     Homey.addCapability("onoff", setState);
@@ -123,7 +125,7 @@ void setup() {
     Homey.addCondition("is_switch1_turned_off", isSwitch1TurnedOff);
     Homey.addCondition("is_switch2_turned_off", isSwitch2TurnedOff);
 
-    digitalWrite(PIN_LED, HIGH); //Turn led off
+    digitalWrite(PIN_LED, HIGH);  // Turn led off
     applyStateForAll();
 }
 
@@ -135,7 +137,7 @@ void loop() {
 
 void setLed() {
     bool led = Homey.value.toInt();
-    digitalWrite(PIN_LED, !led); //Write to led, output is inverted
+    digitalWrite(PIN_LED, !led);  // Write to led, output is inverted
 }
 
 void applyStateForAll() {
@@ -253,7 +255,6 @@ void isSwitch2TurnedOff() {
     Serial.println("isSwitch2TurnedOff(): " + String(!stateSwitch2));
     return Homey.returnResult(!stateSwitch2);
 }
-
 
 void buttonChanged(Button *btn, bool released) {
     Serial.print("button #");

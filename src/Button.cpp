@@ -8,11 +8,11 @@
  * Constructor
  */
 Button::Button(uint8_t buttonPin, int id, onActionFunction actionFunc) {
-    this->buttonPin = buttonPin;
-    this->id = id;
+    this->buttonPin  = buttonPin;
+    this->id         = id;
     this->actionFunc = actionFunc;
-    currentState = HIGH;
-    lastButtonState = HIGH;
+    currentState     = HIGH;
+    lastButtonState  = HIGH;
 }
 
 void Button::begin() {
@@ -40,7 +40,7 @@ void Button::process(int pinState) {
 
         if (pinState != currentState) {
             // The button state has been changed:
-            currentState = pinState;
+            currentState  = pinState;
             bool released = pinState == HIGH;
 
             // Call action function if registered
@@ -48,12 +48,7 @@ void Button::process(int pinState) {
                 actionFunc(this, released);
             }
         }
-
     }
 
     lastButtonState = pinState;
 }
-
-
-
-
